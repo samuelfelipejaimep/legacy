@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Background ── */
+    --background: 0 0% 4%;        /* #0A0A0A */
+    --foreground: 0 0% 98%;
+
+    /* ── Card / Surface ── */
+    --card: 0 0% 7%;              /* #111111 */
+    --card-foreground: 0 0% 98%;
+
+    /* ── Popover ── */
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 98%;
+
+    /* ── Primary (white) ── */
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 4%;
+
+    /* ── Secondary (surface) ── */
+    --secondary: 0 0% 11%;
+    --secondary-foreground: 0 0% 98%;
+
+    /* ── Muted ── */
+    --muted: 0 0% 13%;
+    --muted-foreground: 0 0% 45%;
+
+    /* ── Accent (RED — alerts, priorities, key elements) ── */
+    --accent: 4 91% 57%;          /* #FF2D20 inspired */
+    --accent-foreground: 0 0% 98%;
+
+    /* ── Destructive ── */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* ── Success ── */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 98%;
+
+    /* ── Warning ── */
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 4%;
+
+    /* ── Border / Input ── */
+    --border: 0 0% 14%;
+    --input: 0 0% 11%;
+    --ring: 4 91% 57%;
+
+    /* ── Radius ── */
+    --radius: 0.625rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── Custom scrollbar ── */
+  ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 99px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* ── Selection ── */
+  ::selection {
+    background: hsl(var(--accent) / 0.25);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  /* ── LEGACY glow effect (red) ── */
+  .glow-red {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.3),
+                0 0 40px hsl(var(--accent) / 0.15);
+  }
+
+  .glow-red-sm {
+    box-shadow: 0 0 10px hsl(var(--accent) / 0.25);
+  }
+
+  /* ── Surface elevation layers ── */
+  .surface-1 { background: hsl(0 0% 7%); }
+  .surface-2 { background: hsl(0 0% 9%); }
+  .surface-3 { background: hsl(0 0% 11%); }
+
+  /* ── Gradient text ── */
+  .text-gradient {
+    background: linear-gradient(135deg, #fff 0%, hsl(var(--accent)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Shimmer skeleton ── */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--secondary)) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s linear infinite;
+  }
+
+  /* ── Number monospace ── */
+  .num { font-variant-numeric: tabular-nums; }
+}

@@ -1,0 +1,262 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────
+
+enum Currency {
+  USD
+  COP
+}
+
+enum ObjectiveStatus {
+  ACTIVE
+  FIXED
+  PAUSED
+  CANCELLED
+  COMPLETED
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+  INVESTMENT
+  SAVINGS
+}
+
+enum MidasRole {
+  USER
+  MIDAS
+}
+
+// ─── MODELS ───────────────────────────────────────────────────
+
+model Profile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  displayName       String
+  avatarUrl         String?
+  level             Int      @default(1)
+  xp                Int      @default(0)
+  controlIndex      Float    @default(0)
+  preferredCurrency Currency @default(USD)
+  shieldBalance     Float    @default(0)
+
+  transactions       Transaction[]
+  objectives         Objective[]
+  monthlyReviews     MonthlyReview[]
+  midasConversations MidasConversation[]
+  levelHistory       LevelHistory[]
+  settings           Settings?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model Settings {
+  id                   String   @id @default(cuid())
+  profileId            String   @unique
+  profile              Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  copToUsdRate         Float    @default(4400)
+  preferredCurrency    Currency @default(USD)
+  notificationsEnabled Boolean  @default(true)
+  vaultThresholdUsd    Float    @default(1000)
+  vaultLiquidityPct    Float    @default(15)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model Category {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  icon      String?
+  color     String?
+  isDefault Boolean @default(false)
+  isSystem  Boolean @default(false)
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+
+  @@map("categories")
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  profileId   String
+  profile     Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  type        TransactionType
+  amount      Float
+  currency    Currency        @default(USD)
+  amountUSD   Float
+  description String
+  notes       String?
+  date        DateTime        @default(now())
+  categoryId  String
+  category    Category        @relation(fields: [categoryId], references: [id])
+  isImpulsive Boolean         @default(false)
+  vaultFlag   Boolean         @default(false)
+
+  allocations ObjectiveAllocation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([date])
+  @@index([categoryId])
+  @@map("transactions")
+}
+
+model Objective {
+  id            String          @id @default(cuid())
+  profileId     String
+  profile       Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name          String
+  subtitle      String?
+  targetAmount  Float
+  currentAmount Float           @default(0)
+  currency      Currency        @default(USD)
+  status        ObjectiveStatus @default(ACTIVE)
+  priority      Int             @default(0)
+  xpReward      Int             @default(0)
+  startedAt     DateTime        @default(now())
+  completedAt   DateTime?
+  cancelledAt   DateTime?
+  targetDate    DateTime?
+
+  allocations ObjectiveAllocation[]
+  hallOfFame  HallOfFame?
+  archive     StrategicArchive?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([status])
+  @@map("objectives")
+}
+
+model ObjectiveAllocation {
+  id            String    @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  objectiveId   String
+  objective     Objective   @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  amount        Float
+  currency      Currency    @default(USD)
+  allocatedAt   DateTime    @default(now())
+
+  @@map("objective_allocations")
+}
+
+model MonthlyReview {
+  id              String   @id @default(cuid())
+  profileId       String
+  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  month           Int
+  year            Int
+  totalIncome     Float    @default(0)
+  totalExpenses   Float    @default(0)
+  totalSaved      Float    @default(0)
+  totalInvested   Float    @default(0)
+  wentWell        String?
+  wentWrong       String?
+  nextMonthGoal   Float?
+  priorityChanges String?
+  midasSummary    String?
+  controlIndexAt  Float    @default(0)
+  xpGained        Int      @default(0)
+  completedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([profileId, month, year])
+  @@index([profileId])
+  @@map("monthly_reviews")
+}
+
+model MidasConversation {
+  id        String  @id @default(cuid())
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title     String?
+  context   String?
+
+  messages MidasMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@map("midas_conversations")
+}
+
+model MidasMessage {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   MidasConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MidasRole
+  content        String
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+  @@map("midas_messages")
+}
+
+model LevelHistory {
+  id         String  @id @default(cuid())
+  profileId  String
+  profile    Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  fromLevel  Int
+  toLevel    Int
+  reason     String?
+  xpAtLevel  Int
+  achievedAt DateTime @default(now())
+
+  @@index([profileId])
+  @@map("level_history")
+}
+
+model HallOfFame {
+  id          String    @id @default(cuid())
+  objectiveId String    @unique
+  objective   Objective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  completedAt DateTime
+  notes       String?
+  photoUrl    String?
+  finalAmount Float
+  xpEarned    Int      @default(0)
+  emotion     String?
+
+  createdAt DateTime @default(now())
+
+  @@map("hall_of_fame")
+}
+
+model StrategicArchive {
+  id             String    @id @default(cuid())
+  objectiveId    String    @unique
+  objective      Objective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  cancelledAt    DateTime
+  reason         String?
+  fundsRecovered Float     @default(0)
+  redistributedTo String?
+
+  createdAt DateTime @default(now())
+
+  @@map("strategic_archive")
+}
